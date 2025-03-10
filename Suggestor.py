@@ -5,6 +5,8 @@ from sklearn.metrics.pairwise import linear_kernel
 from ast import literal_eval
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from surprise import Reader, Dataset, model_selection,SVD
+
 
 class Suggestor:
     def __init__(self):
@@ -43,8 +45,7 @@ class Suggestor:
             if isinstance(x, str):
                 return str.lower(x.replace(" ", ""))
             else:
-                return ''
-            
+                return ''        
     def create_soup(self,x):
         return ' '.join(x['keywords']) + ' ' + ' '.join(x['cast']) + ' ' + x['director'] + ' ' + ' '.join(x['genres'])
     
@@ -93,8 +94,23 @@ class Suggestor:
         #filmlerin indexlerini alir, df2'den bulmak icin
         movie_indicex = [i[0] for i in sim_scores]
         #en benzer ilk 10 filmi doner
+        
+        
+        
+        #----------------COLLABORATIVE------------------
+       
+        
         return self.df2['title'].iloc[movie_indicex]
         
 suggest = Suggestor()    
-suggest.get_recommendations("The Dark Knight Rises").to_excel("deneme.xlsx")
+#suggest.get_recommendations("No Country for Old Men").to_excel("deneme.xlsx")
+reader = Reader()
+ratings = pd.read_csv("OneriRobotu/archive/ratings_small.csv")
+data = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+svd = SVD()
+model_selection.cross_validate(svd, data, measures=['RMSE','MAE'])
+trainset = data.build_full_trainset()
+svd.fit(trainset)
+ratings[ratings['userId'] == 1].to_excel("deneme.xlsx")
+print(svd.predict(1, 302, 3))
 
