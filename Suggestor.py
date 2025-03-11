@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import csv
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from ast import literal_eval
@@ -13,6 +14,24 @@ class Suggestor:
         self.keywords = pd.read_csv('OneriRobotu/archive/keywords.csv')
         self.links_small = pd.read_csv('OneriRobotu/archive/links_small.csv')
         self.ratings = pd.read_csv("OneriRobotu/archive/ratings_small.csv")
+        
+        """
+        User profiling icin: input almaya basladigimizda user title girecek, biz title'i autocomplete ile
+        tamamlayacagiz sonra rating girecek. 
+        db'den title'i kullanarak id cekecegiz. sonra self.rows kismina [1,id,rating] seklinde yerlestirecegiz.
+        inputlar bittikten sonra son bir film alip (su filme benzer filmleri goster)
+        o filme benzer filmleri kullanicinin rating profiline gore siralayacak ve output edecek.
+        
+        veya direkt user profiling kismindan sonra you might also like diyip son film almadan da liste verebiliriz
+        """
+        self.fields = ['userId', 'movieId', 'rating']
+        self.rows = [[1,31,5],[1,1029,3],[1,1061,3],[1,1129,2]]
+        self.filename = "OneriRobotu/archive/userRatings.csv"
+        with open (self.filename,"w") as csvfile:
+            csvwriter = csvwriter(csvfile)
+            csvwriter.writerow(self.fields)
+            csvwriter.writerows(self.rows)
+        self.usercsv = pd.read_csv(self.filename)
         
         # Gerekli sutunlari donustur ve yil sutunu olustur
         vote_counts = self.md[self.md['vote_count'].notnull()]['vote_count'].astype('int')
@@ -77,7 +96,7 @@ class Suggestor:
         
         # Surprise kutuphanesi ile SVD modelini egit
         reader = Reader()
-        data = Dataset.load_from_df(self.ratings[['userId', 'movieId', 'rating']], reader)
+        data = Dataset.load_from_df(self.usercsv[['userId', 'movieId', 'rating']], reader)
         self.svd = SVD()
         model_selection.cross_validate(self.svd, data, measures=['RMSE', 'MAE'])
         trainset = data.build_full_trainset()
