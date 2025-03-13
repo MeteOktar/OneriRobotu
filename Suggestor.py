@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import csv
+import sys
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from ast import literal_eval
@@ -123,24 +124,48 @@ class Suggestor:
         self.indices_map = indices_map
         print("--- %s ID VE INDEX MAP seconds ---" % (time.time() - start_time))
     
+        # id_map'in bir kopyasını oluştur
+        id_map_lower = id_map.copy()
+
         # Film isimlerini küçük harfe çevirerek indeks oluştur
-        id_map.index = id_map.index.str.lower()
+        id_map_lower.index = id_map_lower.index.str.lower()
 
         # Kullanıcıdan gelen inputları küçük harfe çevir
         input = {key: value.lower() for key, value in input.items()}
 
-        # Sadece film isimlerini al
-        movie_inputs = {key: value.lower() for key, value in input.items() if key.startswith("input_")}
+        # Sadece "input_" ile başlayan anahtarları al (film isimleri), "input_5" hariç
+        movie_inputs = {key: value.lower() for key, 
+                        value in input.items() if key.startswith("input_") and key != "input_5"}
 
         # Film isimlerine karşılık gelen id'leri al
         movie_ids = []
         for movie_name in movie_inputs.values():
-            if movie_name in id_map.index:
-                movie_id = id_map.loc[movie_name, 'id']
+            if movie_name in id_map_lower.index:
+                movie_id = id_map_lower.loc[movie_name, 'id']
                 movie_ids.append(movie_id)
             else:
                 movie_ids.append(None)  # Eğer film ismi eşleşmezse None eklenir
-
+                
+        # "input_5" için ayrı işlem yap ve hata kontrolü ekle
+        original_id = None
+        if "input_5" in input:
+            input_5_name = input["input_5"].lower()  # Küçük harfe çevir
+            if input_5_name in id_map_lower.index:
+                original_id = id_map_lower.loc[input_5_name, 'id']
+            else:
+                print(f"Hata: '{input_5_name}' isimli film id_map'te bulunamadı! Lütfen geçerli bir film girin.")
+                sys.exit(1)  # Programı durdur
+                
+        # original_id'den film ismini almak için
+        if original_id in id_map["id"].values:
+            self.original_title = id_map[id_map["id"] == original_id].index[0]  # Film ismini al
+        else:
+            self.original_title = None  # Eğer film ID bulunamazsa None ata
+        
+        if self.original_title is None:
+            print(f"Hata: '{input_5_name}' isimli film id_map'te bulunamadı! Lütfen geçerli bir film girin.")
+            sys.exit(1)  # Programı durdur
+                
         # Hata: movie_ids ve movie_inputs.values() farklı uzunluktaysa bunu önlemek için liste boyutunu kontrol et
         if len(movie_inputs) != len(movie_ids):
             print("Uyarı: movie_inputs ve movie_ids uzunlukları eşleşmiyor!")
@@ -184,22 +209,6 @@ class Suggestor:
         self.svd.fit(trainset)
         print("--- %s SVD TRAIN seconds ---" % (time.time() - start_time))
         
-        # # id_map ve indices_map'i olustur
-        # start_time = time.time()
-        # id_map = pd.read_csv("./archive/links_small.csv")[['movieId', 'tmdbId']]
-        # id_map['tmdbId'] = id_map['tmdbId'].apply(self.convert_int)
-        # id_map.columns = ['movieId', 'id']
-        # id_map = id_map.merge(self.smd[['title', 'id']], on='id').set_index('title') # ONCEKI ID_MAP YERI
-        # self.id_map = id_map
-        # indices_map = id_map.set_index('id')
-        # indices_map.index = indices_map.index.astype(int)
-        # self.indices_map = indices_map
-        # print("--- %s ID VE INDEX MAP seconds ---" % (time.time() - start_time))
-        
-        # Debug amacli Excel ciktilari
-        #self.indices_map.to_excel("indexler.xlsx")
-        #self.id_map.to_excel("idler.xlsx")
-    
     # Yardimci metodlar:
     def clean_data(self, x):
         if isinstance(x, list):
@@ -230,6 +239,9 @@ class Suggestor:
             return int(x)
         except:
             return np.nan
+        
+    def get_films_alike(self):
+        return self.original_title
     
     def hybrid(self, userId, title):
         """

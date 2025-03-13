@@ -5,3 +5,5 @@ class Main:
     if __name__ == "__main__":
         data = run_ui()
         suggestor = Suggestor(data)
+        recommendations = suggestor.hybrid(1, suggestor.get_films_alike())
+        recommendations.to_excel("deneme_gelismis.xlsx")
