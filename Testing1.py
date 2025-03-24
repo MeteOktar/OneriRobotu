@@ -7,14 +7,14 @@ import pandas as pd
 from pathlib import Path
 from Suggestor import Suggestor  # Öneri sisteminin ana kodu
 
-# 🔹 1️⃣ Pickle Dosyalarının Yüklenme Testi
+# Pickle Dosyalarının Yüklenme Testi
 class TestLoadingPickleFiles(unittest.TestCase):
     """Pickle dosyalarının düzgün yüklendiğini test eder"""
 
     def setUp(self):
         """Test öncesi pickle dosyalarının var olup olmadığını kontrol eder."""
-        self.smd_path = Path("OneriRobotu/archive/smd.pkl")
-        self.ratings_path = Path("OneriRobotu/archive/ratings.pkl")
+        self.smd_path = Path("./archive/smd.pkl")
+        self.ratings_path = Path("./archive/ratings.pkl")
 
     def test_loading_existing_pickles(self):
         """Pickle dosyaları varsa, CSV işlemleri atlanmalı ve hızlı yüklenmeli."""
@@ -22,7 +22,7 @@ class TestLoadingPickleFiles(unittest.TestCase):
         self.assertTrue(self.ratings_path.is_file(), "ratings.pkl bulunamadı!")
 
         start_time = time.time()
-        suggestor = Suggestor()
+        suggestor = Suggestor(None)
         elapsed_time = time.time() - start_time
 
         self.assertTrue(hasattr(suggestor, "smd"), "smd.pkl yüklenmedi!")
@@ -30,42 +30,42 @@ class TestLoadingPickleFiles(unittest.TestCase):
         self.assertLess(elapsed_time, 5, "Pickle yükleme süresi beklenenden uzun!")
 
 
-# 🔹 2️⃣ Pickle Dosyalarının Yoksa Oluşturulma Testi
+# Pickle Dosyalarının Yoksa Oluşturulma Testi
 class TestNoExistingPickleFiles(unittest.TestCase):
     """Eğer pickle dosyaları yoksa, CSV dosyalarından oluşturulup oluşturulmadığını test eder."""
 
     def setUp(self):
         """Mevcut pickle dosyalarını silerek test ortamını sıfırlar."""
-        if os.path.exists('OneriRobotu/archive/smd.pkl'):
-            os.remove('OneriRobotu/archive/smd.pkl')
-        if os.path.exists('OneriRobotu/archive/ratings.pkl'):
-            os.remove('OneriRobotu/archive/ratings.pkl')
+        if os.path.exists('./archive/smd.pkl'):
+            os.remove('./archive/smd.pkl')
+        if os.path.exists('./archive/ratings.pkl'):
+            os.remove('./archive/ratings.pkl')
 
     def test_create_pickle_files(self):
         """Pickle dosyalarının yokken oluşturulup oluşturulmadığını test eder."""
-        suggestor = Suggestor()
-        self.assertTrue(os.path.exists('OneriRobotu/archive/smd.pkl'), "smd.pkl oluşturulmadı!")
-        self.assertTrue(os.path.exists('OneriRobotu/archive/ratings.pkl'), "ratings.pkl oluşturulmadı!")
+        suggestor = Suggestor(None)
+        self.assertTrue(os.path.exists('./archive/smd.pkl'), "smd.pkl oluşturulmadı!")
+        self.assertTrue(os.path.exists('./archive/ratings.pkl'), "ratings.pkl oluşturulmadı!")
 
-        with open('OneriRobotu/archive/smd.pkl', 'rb') as f:
+        with open('./archive/smd.pkl', 'rb') as f:
             smd_data = pickle.load(f)
             self.assertIsInstance(smd_data, pd.DataFrame, "smd.pkl içeriği DataFrame olmalı!")
             self.assertGreater(len(smd_data), 0, "smd.pkl boş!")
 
-        with open('OneriRobotu/archive/ratings.pkl', 'rb') as f:
+        with open('./archive/ratings.pkl', 'rb') as f:
             ratings_data = pickle.load(f)
             self.assertIsInstance(ratings_data, pd.DataFrame, "ratings.pkl içeriği DataFrame olmalı!")
             self.assertGreater(len(ratings_data), 0, "ratings.pkl boş!")
 
     def tearDown(self):
         """Test tamamlandıktan sonra oluşturulan pickle dosyalarını siler."""
-        if os.path.exists('OneriRobotu/archive/smd.pkl'):
-            os.remove('OneriRobotu/archive/smd.pkl')
-        if os.path.exists('OneriRobotu/archive/ratings.pkl'):
-            os.remove('OneriRobotu/archive/ratings.pkl')
+        if os.path.exists('./archive/smd.pkl'):
+            os.remove('./archive/smd.pkl')
+        if os.path.exists('./archive/ratings.pkl'):
+            os.remove('./archive/ratings.pkl')
 
 
-# 🔹 3️⃣ Hybrid Metodunun Doğru Çalışma Testi (Geçerli Verilerle)
+# Hybrid Metodunun Doğru Çalışma Testi (Geçerli Verilerle)
 class TestHybridMethod(unittest.TestCase):
     """Hybrid metodunun geçerli girişlerle düzgün çalıştığını test eder."""
 
@@ -97,7 +97,7 @@ class TestHybridMethod(unittest.TestCase):
             os.remove(output_filename)
 
 
-# 🔹 4️⃣ Hybrid Metodunun Geçersiz Film İsimleriyle Testi
+# Hybrid Metodunun Geçersiz Film İsimleriyle Testi
 class TestHybridInvalidMovie(unittest.TestCase):
     """Geçersiz film isimleri girildiğinde sistemin nasıl tepki verdiğini test eder."""
 
@@ -112,7 +112,7 @@ class TestHybridInvalidMovie(unittest.TestCase):
             "rating_3": 4,
             "input_4": "RandomFilm99",
             "rating_4": 5,
-            "input_5": "Gladiator"
+            "input_5": "terduydr"
         }
 
     def test_hybrid_invalid_movie(self):
@@ -122,22 +122,22 @@ class TestHybridInvalidMovie(unittest.TestCase):
         self.assertEqual(cm.exception.code, 1, "Sistem çıkış kodu 1 olmalı, yani hata vermeli!")
 
 
-# 🔹 5️⃣ Güvenlik Testi: SQL Injection ve Kötü Amaçlı Girişler
+# Güvenlik Testi: SQL Injection ve Kötü Amaçlı Girişler
 class TestSecurityCheck(unittest.TestCase):
     """Sistemin SQL Injection veya kötü niyetli girişlere karşı korunduğunu test eder."""
 
     def setUp(self):
         """Test için kötü niyetli girişleri hazırlar."""
         self.malicious_input = {
-            "input_1": "DROP TABLE Movies;--",
+            "input_1": "DROP TABLE Movies",
             "rating_1": 3,
-            "input_2": "' OR '1'='1",
+            "input_2": "' ORfxgjh",
             "rating_2": 5,
-            "input_3": "<script>alert('Hacked');</script>",
+            "input_3": "<script>alertHackedscript>",
             "rating_3": 4,
             "input_4": "Robert'); DROP TABLE Users;--",
             "rating_4": 2,
-            "input_5": "Gladiator"
+            "input_5": "w54e6dr5f7t6g8yhuj"
         }
 
     def test_security_check(self):

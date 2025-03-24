@@ -130,8 +130,11 @@ class Suggestor:
         # Film isimlerini küçük harfe çevirerek indeks oluştur
         id_map_lower.index = id_map_lower.index.str.lower()
 
+        if(input == None):
+            return
+        
         # Kullanıcıdan gelen inputları küçük harfe çevir
-        input = {key: value.lower() for key, value in input.items()}
+        input = {key: str(value).lower() for key, value in input.items()}
 
         # Sadece "input_" ile başlayan anahtarları al (film isimleri), "input_5" hariç
         movie_inputs = {key: value.lower() for key, 
