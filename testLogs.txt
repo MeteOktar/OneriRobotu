@@ -1,0 +1,18 @@
+....E....
+======================================================================
+ERROR: test_security_check (__main__.TestSecurityCheck.test_security_check)
+SQL Injection veya kötü amaçlý giriþlerin engellenip engellenmediðini test eder.
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "c:\Users\Mete\Desktop\viescode\vscodePython\OneriRobotu\Testing1.py", line 174, in test_security_check
+    suggestor = Suggestor(self.malicious_input)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Users\Mete\Desktop\viescode\vscodePython\OneriRobotu\Suggestor.py", line 162, in __init__
+    sys.exit(1)  # Programý durdur
+    ^^^^^^^^^^^
+SystemExit: 1
+
+----------------------------------------------------------------------
+Ran 9 tests in 50.641s
+
+FAILED (errors=1)
