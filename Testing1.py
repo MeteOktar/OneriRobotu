@@ -155,5 +155,36 @@ class TestSecurityCheck(unittest.TestCase):
         except Exception as e:
             self.fail(f"Test sırasında beklenmedik bir hata oluştu: {e}")
 
+# Verilen testler için yeni test sınıfı
+class TestSuggestorMethods(unittest.TestCase):
+    """Suggestor sınıfındaki metodları test eder."""
+
+    def setUp(self):
+        """Test için Suggestor örneğini hazırlar."""
+        self.suggestor = Suggestor({})
+
+    def test_clean_data(self):
+        """clean_data metodunun film ismi üzerindeki işlemi doğru yaptığını test eder."""
+        # Film ismini doğru şekilde temizlemesi gerekiyor
+        self.assertEqual(self.suggestor.clean_data("Tom Cruise"), "tomcruise")  # Boşluklar kaldırılacak ve küçük harfe çevrilecek
+        self.assertEqual(self.suggestor.clean_data("The Matrix"), "thematrix")  # Yine küçük harfe ve boşluksuz olacak
+        self.assertEqual(self.suggestor.clean_data("Avatar: The Way of Water"), "avatar:thewayofwater")  # Boşluklar ve büyük harfler kaldırılacak
+
+    def test_get_director(self):
+        """get_director metodunun yönetmeni doğru çektiğini test eder"""
+        crew = [{"job": "Director", "name": "Christopher Nolan"}, {"job": "Producer", "name": "Emma Thomas"}]
+        self.assertEqual(self.suggestor.get_director(crew), "Christopher Nolan")
+
+    def test_get_list(self):
+        """get_list metodunun en fazla 3 eleman döndürdüğünü test eder"""
+        keywords = [{"name": "sci-fi"}, {"name": "thriller"}, {"name": "drama"}, {"name": "action"}]
+        self.assertEqual(self.suggestor.get_list(keywords), ["sci-fi", "thriller", "drama"])
+
+    def test_create_soup(self):
+        """create_soup metodunun kelimeleri birleştirdiğini test eder"""
+        row = {"keywords": ["sci-fi", "thriller"], "cast": ["Tom Hardy", "Cillian Murphy"], "director": "Nolan", "genres": ["Action", "Drama"]}
+        self.assertEqual(self.suggestor.create_soup(row), "sci-fi thriller Tom Hardy Cillian Murphy Nolan Action Drama")
+
+
 if __name__ == "__main__":
     unittest.main()
