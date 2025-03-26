@@ -121,47 +121,12 @@ class TestHybridInvalidMovie(unittest.TestCase):
             Suggestor(self.invalid_input)
         self.assertEqual(cm.exception.code, 1, "Sistem çıkış kodu 1 olmalı, yani hata vermeli!")
 
-
-# Güvenlik Testi: SQL Injection ve Kötü Amaçlı Girişler
-class TestSecurityCheck(unittest.TestCase):
-    """Sistemin SQL Injection veya kötü niyetli girişlere karşı korunduğunu test eder."""
-
-    def setUp(self):
-        """Test için kötü niyetli girişleri hazırlar."""
-        self.malicious_input = {
-            "input_1": "DROP TABLE Movies",
-            "rating_1": 3,
-            "input_2": "' ORfxgjh",
-            "rating_2": 5,
-            "input_3": "<script>alertHackedscript>",
-            "rating_3": 4,
-            "input_4": "Robert'); DROP TABLE Users;--",
-            "rating_4": 2,
-            "input_5": "w54e6dr5f7t6g8yhuj"
-        }
-
-    def test_security_check(self):
-        """SQL Injection veya kötü amaçlı girişlerin engellenip engellenmediğini test eder."""
-        try:
-            suggestor = Suggestor(self.malicious_input)
-            recommendations = suggestor.hybrid(1, "Gladiator")
-
-            for bad_input in self.malicious_input.values():
-                self.assertNotIn(bad_input, recommendations.values, "Kötü niyetli giriş öneri listesine sızmamalı!")
-
-            output_file = "deneme_gelismis.xlsx"
-            self.assertFalse(Path(output_file).exists(), "Kötü niyetli girişlerle dosya oluşturulmamalı!")
-
-        except Exception as e:
-            self.fail(f"Test sırasında beklenmedik bir hata oluştu: {e}")
-
-# Verilen testler için yeni test sınıfı
 class TestSuggestorMethods(unittest.TestCase):
     """Suggestor sınıfındaki metodları test eder."""
 
     def setUp(self):
         """Test için Suggestor örneğini hazırlar."""
-        self.suggestor = Suggestor({})
+        self.suggestor = Suggestor(None)
 
     def test_clean_data(self):
         """clean_data metodunun film ismi üzerindeki işlemi doğru yaptığını test eder."""
@@ -185,6 +150,47 @@ class TestSuggestorMethods(unittest.TestCase):
         row = {"keywords": ["sci-fi", "thriller"], "cast": ["Tom Hardy", "Cillian Murphy"], "director": "Nolan", "genres": ["Action", "Drama"]}
         self.assertEqual(self.suggestor.create_soup(row), "sci-fi thriller Tom Hardy Cillian Murphy Nolan Action Drama")
 
+# Güvenlik Testi: SQL Injection ve Kötü Amaçlı Girişler
+class TestSecurityCheck(unittest.TestCase):
+    """Sistemin SQL Injection veya kötü niyetli girişlere karşı korunduğunu test eder."""
+
+    def setUp(self):
+        """Test için kötü niyetli girişleri hazırlar."""
+        self.malicious_input = {
+            "input_1": "DROP TABLE Movies",
+            "rating_1": 3,
+            "input_2": "' ORfxgjh",
+            "rating_2": 5,
+            "input_3": "<script>alertHackedscript>",
+            "rating_3": 4,
+            "input_4": "Robert'); DROP TABLE Users;--",
+            "rating_4": 2,
+            "input_5": "w54e6dr5f7t6g8yhuj"
+        }
+    
+    def test_security_check(self):
+        """SQL Injection veya kötü amaçlı girişlerin engellenip engellenmediğini test eder."""
+        try:
+            suggestor = Suggestor(self.malicious_input)
+            recommendations = suggestor.hybrid(1, "Gladiator")
+
+            for bad_input in self.malicious_input.values():
+                self.assertNotIn(bad_input, recommendations.values, "Kötü niyetli giriş öneri listesine sızmamalı!")
+
+            output_file = "output.xlsx"
+            self.assertFalse(Path(output_file).exists(), "Kötü niyetli girişlerle dosya oluşturulmamalı!")
+
+        except Exception as e:
+            self.fail(f"Test sırasında beklenmedik bir hata oluştu: {e}")
+
+# Verilen testler için yeni test sınıfı
+
 
 if __name__ == "__main__":
-    unittest.main()
+    # Testlerin çıktısını log dosyasına yazdırmak için TextTestRunner'ı kullan
+    with open("./testLogs.txt", 'w') as log:
+        runner = unittest.TextTestRunner(stream=log)
+        unittest.main(testRunner=runner, exit=False)
+
+    # Son olarak, sys.stdout'u eski haline getirme
+    sys.stdout = sys.__stdout__

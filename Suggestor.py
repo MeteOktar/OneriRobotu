@@ -10,6 +10,8 @@ import time
 from pathlib import Path
 class Suggestor:
     def __init__(self, input):
+        f = open("./logs.txt","w")
+        sys.stdout=f
         start_time = time.time()
         # CSV dosyalarini yukle
         smdpickle_path = Path("./archive/smd.pkl")
@@ -178,7 +180,7 @@ class Suggestor:
         missing_movies = [movie for i, movie in enumerate(movie_inputs.values()) if i < len(movie_ids) and movie_ids[i] is None]
         if missing_movies:
             print("Eşleşmeyen filmler:", missing_movies)
-
+    
         # self.rows listesini oluştur
         self.fields = ['userId', 'movieId', 'rating']
         self.rows = [[1, movie_id, input[f'rating_{i+1}']] for i, movie_id in enumerate(movie_ids) if movie_id is not None]
@@ -195,14 +197,6 @@ class Suggestor:
         reader = Reader()
         data = Dataset.load_from_df(self.usercsv[['userId', 'movieId', 'rating']], reader)
         print("--- %s DATASET seconds ---" % (time.time() - start_time))
-        
-        """
-        DAHA BUYUK DATASET KULLANILDIGINDA CROSS VALIDATE ILE DOGRU MU CALISIYO BAK
-        
-        start_time = time.time()
-        print(model_selection.cross_validate(self.svd, data, measures=['RMSE', 'MAE']))
-        print("--- %s CROSS VALIDATE seconds ---" % (time.time() - start_time))
-        """
         self.svd = SVD()
         start_time= time.time()
         trainset = data.build_full_trainset()
@@ -211,6 +205,8 @@ class Suggestor:
         start_time = time.time()
         self.svd.fit(trainset)
         print("--- %s SVD TRAIN seconds ---" % (time.time() - start_time))
+        sys.stdout = sys.__stdout__
+        f.close()
         
     # Yardimci metodlar:
     def clean_data(self, x):
@@ -247,6 +243,8 @@ class Suggestor:
         return self.original_title
     
     def hybrid(self, userId, title):
+        f = open("./logs.txt","a")
+        sys.stdout = f
         """
         Kullanici ve film basligina gore hibrit oneri listesi olusturur.
         Ilk olarak cosine similarity ile benzer filmler belirlenir,
@@ -266,13 +264,7 @@ class Suggestor:
             lambda x: self.svd.predict(userId, self.indices_map.loc[x]['movieId']).est)
         movies = movies.sort_values('est', ascending=False)
         print("--- %s HYBRID seconds ---" % (time.time() - start_time))
+        sys.stdout= sys.__stdout__
+        f.close()
         return movies.head(20)
         
-
-# Dosya dogrudan calisirken buradan calisiyor
-# if __name__ == "__main__":
-#     start_time = time.time()
-#     suggestor = Suggestor(data)
-#     recommendations = suggestor.hybrid(312, 'Gladiator')
-#     recommendations.to_excel("deneme.xlsx")
-#     print("--- %s seconds ---" % (time.time() - start_time))

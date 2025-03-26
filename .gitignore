@@ -1,1 +1,5 @@
 credits.csv
+build
+dist
+__pycache__
+Main.spec
